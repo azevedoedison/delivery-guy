@@ -13,6 +13,8 @@ var health := 3
 var facing_right := true
 var is_delivering := false
 var walk_frame := 0.0
+var blink_timer := 0.0
+var is_blinking := false
 
 @onready var delivery_area := $DeliveryArea
 
@@ -20,6 +22,13 @@ func _ready() -> void:
 	add_to_group("player")
 
 func _physics_process(delta: float) -> void:
+	blink_timer += delta
+	if blink_timer > 3.0:
+		is_blinking = true
+		if blink_timer > 3.15:
+			is_blinking = false
+			blink_timer = 0.0
+	
 	if not is_on_floor():
 		velocity.y += GRAVITY * delta
 
@@ -42,42 +51,82 @@ func _physics_process(delta: float) -> void:
 	move_and_slide()
 
 func _draw() -> void:
-	var flip = -1.0 if facing_right else 1.0
+	var f = 1.0 if facing_right else -1.0
+	var walking = abs(velocity.x) > 10
+	var leg_anim = sin(walk_frame) * 3 if walking else 0
+	var arm_anim = sin(walk_frame) * 2.5 if walking else 0
 	
-	# Player body (yellow shirt guy)
-	var body_color = Color(1, 0.85, 0.1)  # Yellow uniform
-	var skin_color = Color(0.95, 0.75, 0.55)
-	var pants_color = Color(0.2, 0.2, 0.4)
-	var hair_color = Color(0.15, 0.1, 0.05)
+	# Colors
+	var skin = Color(0.96, 0.76, 0.56)
+	var shirt = Color(1.0, 0.85, 0.1)  # Yellow uniform
+	var shirt_dark = Color(0.85, 0.72, 0.08)
+	var pants = Color(0.22, 0.22, 0.4)
+	var pants_dark = Color(0.18, 0.18, 0.35)
+	var shoe = Color(0.25, 0.15, 0.1)
+	var hair = Color(0.12, 0.08, 0.05)
+	var eye_white = Color(1, 1, 1)
+	var eye_pupil = Color(0.1, 0.1, 0.1)
 	
-	# Head
-	draw_rect(Rect2(-4, -18, 8, 8), skin_color)
-	# Hair
-	draw_rect(Rect2(-4, -20, 8, 4), hair_color)
+	# === SHADOW ===
+	draw_rect(Rect2(-6, 10, 14, 3), Color(0, 0, 0, 0.15))
+	
+	# === LEGS ===
+	var leg_y = 2
+	# Left leg
+	draw_rect(Rect2(-5, leg_y + leg_anim, 4, 8), pants)
+	draw_rect(Rect2(-5, leg_y + leg_anim + 7, 5, 3), shoe)
+	# Right leg  
+	draw_rect(Rect2(1, leg_y - leg_anim, 4, 8), pants)
+	draw_rect(Rect2(1, leg_y - leg_anim + 7, 5, 3), shoe)
+	# Pants detail
+	draw_rect(Rect2(-5, leg_y, 4, 2), pants_dark)
+	draw_rect(Rect2(1, leg_y, 4, 2), pants_dark)
+	
+	# === BODY ===
+	draw_rect(Rect2(-6, -8, 12, 11), shirt)
+	# Shirt details
+	draw_rect(Rect2(-6, -8, 12, 2), shirt_dark)  # Shadow at top
+	draw_rect(Rect2(-1, -7, 2, 9), shirt_dark)   # Middle line
+	# Collar
+	draw_rect(Rect2(-2, -9, 4, 2), skin)
+	
+	# === ARMS ===
+	var arm_y = -7
+	# Left arm
+	draw_rect(Rect2(-8, arm_y + arm_anim, 3, 9), shirt)
+	draw_rect(Rect2(-8, arm_y + arm_anim + 8, 3, 4), skin)
+	# Right arm
+	draw_rect(Rect2(5, arm_y - arm_anim, 3, 9), shirt)
+	draw_rect(Rect2(5, arm_y - arm_anim + 8, 3, 4), skin)
+	
+	# === HEAD ===
+	# Face
+	draw_rect(Rect2(-5, -20, 10, 12), skin)
+	# Hair (top)
+	draw_rect(Rect2(-5, -22, 10, 4), hair)
+	# Hair (sides)
+	draw_rect(Rect2(-6, -21, 2, 6), hair)
+	draw_rect(Rect2(4, -21, 2, 6), hair)
+	
 	# Eyes
-	draw_rect(Rect2(-2 + 3 * flip, -16, 2, 2), Color.BLACK)
+	if not is_blinking:
+		draw_rect(Rect2(-3 * f, -17, 3, 3), eye_white)
+		draw_rect(Rect2(-2 * f, -17, 2, 2), eye_pupil)
+		draw_rect(Rect2(1 * f, -17, 3, 3), eye_white)
+		draw_rect(Rect2(2 * f, -17, 2, 2), eye_pupil)
+	else:
+		draw_rect(Rect2(-3 * f, -16, 3, 1), eye_pupil)
+		draw_rect(Rect2(1 * f, -16, 3, 1), eye_pupil)
 	
-	# Body
-	draw_rect(Rect2(-5, -10, 10, 10), body_color)
+	# Mouth (smile)
+	draw_rect(Rect2(-2, -13, 4, 1), Color(0.7, 0.4, 0.35))
 	
-	# Arms animation
-	var arm_y = sin(walk_frame) * 3 if abs(velocity.x) > 10 else 0
-	draw_rect(Rect2(-7, -9 + arm_y, 3, 8), skin_color)
-	draw_rect(Rect2(4, -9 - arm_y, 3, 8), skin_color)
-	
-	# Legs animation
-	var leg_offset = sin(walk_frame) * 4 if abs(velocity.x) > 10 else 0
-	draw_rect(Rect2(-4, 0, 3, 8 + leg_offset), pants_color)
-	draw_rect(Rect2(1, 0, 3, 8 - leg_offset), pants_color)
-	
-	# Shoes
-	draw_rect(Rect2(-5, 6 + leg_offset, 5, 3), Color(0.3, 0.2, 0.1))
-	draw_rect(Rect2(0, 6 - leg_offset, 5, 3), Color(0.3, 0.2, 0.1))
-	
-	# Package on back if carrying
+	# === PACKAGE on back ===
 	if is_carrying_package:
-		draw_rect(Rect2(-8 * flip, -16, 8, 8), Color(0.6, 0.4, 0.2))
-		draw_rect(Rect2(-8 * flip, -16, 8, 2), Color(0.5, 0.3, 0.15))
+		var px = -9 * f
+		draw_rect(Rect2(px, -18, 8, 8), Color(0.65, 0.45, 0.2))
+		draw_rect(Rect2(px + 3, -18, 2, 8), Color(0.55, 0.35, 0.15))
+		draw_rect(Rect2(px, -14, 8, 2), Color(0.55, 0.35, 0.15))
 
 func _can_deliver() -> bool:
 	for area in delivery_area.get_overlapping_areas():
@@ -95,7 +144,6 @@ func _perform_delivery() -> void:
 	get_tree().call_group("ui", "update_money", money)
 	get_tree().call_group("ui", "show_message", "Entrega! +R$" + str(reward))
 	
-	# Remove the delivery point
 	for area in delivery_area.get_overlapping_areas():
 		if area.is_in_group("delivery_point"):
 			area.queue_free()
@@ -128,7 +176,7 @@ func hit_by_police() -> void:
 		crimes = 0
 		get_tree().call_group("ui", "update_crimes", crimes)
 		if prev > 0:
-			get_tree().call_group("ui", "show_message", "Documento ok, crimes resetados!")
+			get_tree().call_group("ui", "show_message", "Documento ok!")
 
 func take_damage() -> void:
 	health -= 1
