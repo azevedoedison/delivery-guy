@@ -1,17 +1,22 @@
 extends Node2D
 
-var current_level := 1
+var current_level := 0
 var total_levels := 30
 var time_remaining := 120.0
 var is_game_active := false
+var deliveries_completed := 0
+var deliveries_needed := 1
+var selected_company := ""
 
-@onready var player := $Player
-@onready var ui := $UI
-@onready var camera := $Player/Camera2D
-@onready var level_timer := $LevelTimer
+@onready var player: CharacterBody2D = $Player
+@onready var ui: CanvasLayer = $UI
 
 func _ready() -> void:
-	start_level(current_level)
+	player.add_to_group("player")
+	ui.add_to_group("ui")
+	add_to_group("game")
+	# Don't start level yet - wait for player to select company
+	ui.show_title()
 
 func _process(delta: float) -> void:
 	if is_game_active:
@@ -21,34 +26,32 @@ func _process(delta: float) -> void:
 		if time_remaining <= 0:
 			game_over("tempo")
 
+func start_game(company: String) -> void:
+	selected_company = company
+	current_level = 1
+	player.money = 0
+	player.health = 3
+	player.crimes = 0
+	player.has_license = true
+	start_level(current_level)
+
 func start_level(level: int) -> void:
 	current_level = level
 	is_game_active = true
-	time_remaining = 60.0 + (level * 5)  # More time for harder levels
+	time_remaining = 60.0 + (level * 5)
+	deliveries_completed = 0
+	deliveries_needed = 1 if level < 6 else 2 if level < 16 else 3
 	
 	ui.show_level(current_level)
 	ui.update_time(time_remaining)
 	ui.update_money(player.money)
 	ui.update_health(player.health)
 	ui.update_crimes(player.crimes)
-	
-	# Spawn deliveries based on level
-	_spawn_deliveries(level)
 
-func _spawn_deliveries(level: int) -> void:
-	# Levels 1-5: 1 delivery at a time
-	# Levels 6-15: 2 deliveries
-	# Levels 16+: 3 deliveries
-	var count = 1
-	if level >= 16:
-		count = 3
-	elif level >= 6:
-		count = 2
-	
-	for i in count:
-		var delivery_point = preload("res://scenes/delivery_point.tscn").instantiate()
-		delivery_point.position = Vector2(200 + randi() % 600, 130)
-		add_child(delivery_point)
+func check_level_complete() -> void:
+	deliveries_completed += 1
+	if deliveries_completed >= deliveries_needed:
+		level_complete()
 
 func level_complete() -> void:
 	is_game_active = false
@@ -58,8 +61,8 @@ func level_complete() -> void:
 	
 	ui.show_level_complete(current_level, bonus)
 	
-	# Wait for player to continue
-	await get_tree().create_timer(2.0).timeout
+	# Auto advance after delay
+	await get_tree().create_timer(3.0).timeout
 	
 	if current_level < total_levels:
 		start_level(current_level + 1)
@@ -74,9 +77,9 @@ func game_over(reason: String) -> void:
 		"tempo":
 			message = "TEMPO ESGOTADO!"
 		"preso":
-			message = "VOCÊ FOI PRESO!"
+			message = "VOCE FOI PRESO!"
 		"morto":
-			message = "VOCÊ MORREU!"
+			message = "VOCE MORREU!"
 	
 	ui.show_game_over(message, player.money, current_level)
 
@@ -96,4 +99,5 @@ func restart_game() -> void:
 	player.health = 3
 	player.crimes = 0
 	player.has_license = true
+	current_level = 1
 	start_level(1)

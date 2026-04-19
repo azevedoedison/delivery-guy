@@ -19,7 +19,6 @@ var is_delivering := false
 
 # References
 @onready var sprite := $Sprite2D
-@onready var animation_player := $AnimationPlayer
 @onready var delivery_area := $DeliveryArea
 @onready var package_sprite := $PackageSprite
 
@@ -45,20 +44,17 @@ func _physics_process(delta: float) -> void:
 	if Input.is_action_just_pressed("deliver") and is_carrying_package and _can_deliver():
 		_perform_delivery()
 
-	# Animate
-	_update_animation()
+	# Simple visual feedback
+	if not is_on_floor():
+		sprite.scale = Vector2(0.9, 1.1) # stretch when jumping
+	elif abs(velocity.x) > 10:
+		# Squash and stretch while walking
+		var t = fmod(Time.get_ticks_msec() * 0.01, TAU)
+		sprite.scale = Vector2(1.0 + sin(t) * 0.05, 1.0 - sin(t) * 0.05)
+	else:
+		sprite.scale = Vector2(1, 1)
 
 	move_and_slide()
-
-func _update_animation() -> void:
-	if is_delivering:
-		return
-	if not is_on_floor():
-		animation_player.play("jump")
-	elif abs(velocity.x) > 10:
-		animation_player.play("walk")
-	else:
-		animation_player.play("idle")
 
 func _can_deliver() -> bool:
 	var areas = delivery_area.get_overlapping_areas()
@@ -69,7 +65,11 @@ func _can_deliver() -> bool:
 
 func _perform_delivery() -> void:
 	is_delivering = true
-	animation_player.play("deliver")
+	
+	# Flash green
+	sprite.modulate = Color.GREEN
+	await get_tree().create_timer(0.3).timeout
+	sprite.modulate = Color(1, 0.95, 0.2, 1)
 	
 	# Calculate reward
 	var reward = 10 + randi() % 20
@@ -83,13 +83,18 @@ func _perform_delivery() -> void:
 	get_tree().call_group("ui", "update_money", money)
 	get_tree().call_group("ui", "show_message", "Entrega! +R$" + str(reward))
 	
-	await animation_player.animation_finished
+	# Check if level complete
+	var gm = get_parent()
+	if gm.has_method("check_level_complete"):
+		gm.check_level_complete()
+	
 	is_delivering = false
 
 func pickup_package(weight: float) -> void:
 	is_carrying_package = true
 	package_weight = weight
 	package_sprite.visible = true
+	get_tree().call_group("ui", "show_message", "Pegue a encomenda!")
 
 func add_crime() -> void:
 	crimes += 1
@@ -107,9 +112,13 @@ func hit_by_police() -> void:
 		get_tree().call_group("game", "game_over", "preso")
 	else:
 		# Just showing license, reset crimes
+		var prev_crimes = crimes
 		crimes = 0
 		get_tree().call_group("ui", "update_crimes", crimes)
-		get_tree().call_group("ui", "show_message", "Documento ok, pode seguir!")
+		if prev_crimes > 0:
+			get_tree().call_group("ui", "show_message", "Documento ok, crimes resetados!")
+		else:
+			get_tree().call_group("ui", "show_message", "Documento ok, pode seguir!")
 
 func take_damage() -> void:
 	health -= 1
@@ -118,7 +127,7 @@ func take_damage() -> void:
 	if health <= 0:
 		get_tree().call_group("game", "game_over", "morto")
 	else:
-		# Flash effect
+		# Flash red
 		sprite.modulate = Color.RED
-		var tween = create_tween()
-		tween.tween_property(sprite, "modulate", Color.WHITE, 0.5)
+		await get_tree().create_timer(0.3).timeout
+		sprite.modulate = Color(1, 0.95, 0.2, 1)

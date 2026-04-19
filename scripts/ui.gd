@@ -1,25 +1,21 @@
 extends CanvasLayer
 
-@onready var money_label := $HUD/MoneyLabel
-@onready var time_label := $HUD/TimeLabel
-@onready var health_label := $HUD/HealthLabel
-@onready var crime_label := $HUD/CrimeLabel
-@onready var level_label := $HUD/LevelLabel
-@onready var message_label := $HUD/MessageLabel
-@onready var message_timer := $HUD/MessageTimer
+@onready var money_label: Label = $HUD/MoneyLabel
+@onready var time_label: Label = $HUD/TimeLabel
+@onready var health_label: Label = $HUD/HealthLabel
+@onready var crime_label: Label = $HUD/CrimeLabel
+@onready var level_label: Label = $HUD/LevelLabel
+@onready var message_label: Label = $HUD/MessageLabel
+@onready var message_timer: Timer = $HUD/MessageTimer
 
-@onready var screens := $Screens
-@onready var title_screen := $Screens/TitleScreen
-@onready var select_screen := $Screens/SelectScreen
-@onready var game_over_screen := $Screens/GameOverScreen
-@onready var level_complete_screen := $Screens/LevelCompleteScreen
-
-# Selected company
-var selected_company := ""
+@onready var title_screen: Control = $Screens/TitleScreen
+@onready var select_screen: Control = $Screens/SelectScreen
+@onready var game_over_screen: Control = $Screens/GameOverScreen
+@onready var level_complete_screen: Control = $Screens/LevelCompleteScreen
 
 func _ready() -> void:
-	show_title()
 	message_timer.timeout.connect(_hide_message)
+	show_title()
 
 # === HUD Updates ===
 
@@ -37,12 +33,10 @@ func update_time(seconds: float) -> void:
 		time_label.add_theme_color_override("font_color", Color.WHITE)
 
 func update_health(health: int) -> void:
-	health_label.text = ""
-	for i in health:
-		health_label.text += "❤️"
+	health_label.text = str(health)
 
 func update_crimes(crimes: int) -> void:
-	crime_label.text = "🚨" + str(crimes) + "/3"
+	crime_label.text = str(crimes) + "/3"
 	if crimes >= 2:
 		crime_label.add_theme_color_override("font_color", Color.RED)
 	elif crimes >= 1:
@@ -75,7 +69,7 @@ func show_level_complete(level: int, bonus: int) -> void:
 	_hide_all_screens()
 	level_complete_screen.visible = true
 	level_complete_screen.get_node("Label").text = "FASE " + str(level) + " COMPLETA!"
-	level_complete_screen.get_node("BonusLabel").text = "Bônus: R$" + str(bonus)
+	level_complete_screen.get_node("BonusLabel").text = "Bonus: R$" + str(bonus)
 
 func show_game_over(reason: String, money: int, level: int) -> void:
 	_hide_all_screens()
@@ -85,22 +79,21 @@ func show_game_over(reason: String, money: int, level: int) -> void:
 
 func show_ending(ending: String, money: int) -> void:
 	_hide_all_screens()
-	var screen = game_over_screen
-	screen.visible = true
+	game_over_screen.visible = true
 	
 	match ending:
 		"triste":
-			screen.get_node("ReasonLabel").text = "Quase conseguiu..."
-			screen.get_node("StatsLabel").text = "R$" + str(money) + " — Não foi suficiente"
+			game_over_screen.get_node("ReasonLabel").text = "Quase conseguiu..."
+			game_over_screen.get_node("StatsLabel").text = "R$" + str(money) + " - Nao foi suficiente"
 		"bom":
-			screen.get_node("ReasonLabel").text = "CONSEGUIU! 🎉"
-			screen.get_node("StatsLabel").text = "R$" + str(money) + " — A filha está curada!"
+			game_over_screen.get_node("ReasonLabel").text = "CONSEGUIU!"
+			game_over_screen.get_node("StatsLabel").text = "R$" + str(money) + " - A filha esta curada!"
 		"perfeito":
-			screen.get_node("ReasonLabel").text = "ENTREGA PERFEITA! 🏆"
-			screen.get_node("StatsLabel").text = "R$" + str(money) + " — Abriu sua própria delivery!"
+			game_over_screen.get_node("ReasonLabel").text = "ENTREGA PERFEITA!"
+			game_over_screen.get_node("StatsLabel").text = "R$" + str(money) + " - Abriu sua propria delivery!"
 
 func _hide_all_screens() -> void:
-	for child in screens.get_children():
+	for child in $Screens.get_children():
 		child.visible = false
 
 # === Button Handlers ===
@@ -109,16 +102,17 @@ func _on_play_pressed() -> void:
 	show_select()
 
 func _on_select_mercadolivre() -> void:
-	selected_company = "mercado_livre"
+	_hide_all_screens()
 	get_parent().start_game("mercado_livre")
 
 func _on_select_ifood() -> void:
-	selected_company = "ifood"
+	_hide_all_screens()
 	get_parent().start_game("ifood")
 
 func _on_select_shopee() -> void:
-	selected_company = "shopee"
+	_hide_all_screens()
 	get_parent().start_game("shopee")
 
 func _on_restart_pressed() -> void:
+	_hide_all_screens()
 	get_parent().restart_game()

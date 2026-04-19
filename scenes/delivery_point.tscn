@@ -1,0 +1,23 @@
+[gd_scene load_steps=2 format=3 uid="uid://delivery001"]
+
+[ext_resource type="Script" path="res://scripts/delivery_point.gd" id="1"]
+
+[sub_resource type="RectangleShape2D" id="shape_detect"]
+size = Vector2(20, 20)
+
+[node name="DeliveryPoint" type="Area2D"]
+collision_layer = 8
+collision_mask = 1
+script = ExtResource("1")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("shape_detect")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+
+[node name="Package" type="Sprite2D" parent="."]
+
+[node name="Label" type="Label" parent="."]
+position = Vector2(-30, -25)
+text = "📦"
+horizontal_alignment = 1
