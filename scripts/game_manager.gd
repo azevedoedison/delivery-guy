@@ -8,6 +8,7 @@ var deliveries_completed := 0
 var deliveries_needed := 1
 var selected_company := ""
 var delivery_scene = preload("res://scenes/delivery_point.tscn")
+var delivery_zone_scene = preload("res://scenes/delivery_zone.tscn")
 
 @onready var player: CharacterBody2D = $Player
 @onready var ui: CanvasLayer = $UI
@@ -52,14 +53,19 @@ func start_level(level: int) -> void:
 	# Spawn deliveries
 	for i in deliveries_needed:
 		var dp = delivery_scene.instantiate()
-		dp.position = Vector2(300 + i * 250 + randi() % 100, 130)
+		dp.position = Vector2(250 + i * 350, 130)
 		deliveries_node.add_child(dp)
 	
-	# Spawn police (more as levels increase)
-	var police_count = min(1 + level / 5, 4)
+	# Spawn delivery zone (portaria) at the end
+	var zone = delivery_zone_scene.instantiate()
+	zone.position = Vector2(900, 140)
+	add_child(zone)
+	
+	# Spawn police AWAY from deliveries
+	var police_count = min(1 + level / 5, 3)
 	for i in police_count:
 		var police = preload("res://scenes/police.tscn").instantiate()
-		police.position = Vector2(200 + i * 300 + randi() % 100, 130)
+		police.position = Vector2(100 + i * 400, 130)
 		enemies_node.add_child(police)
 	
 	ui.show_level(current_level)

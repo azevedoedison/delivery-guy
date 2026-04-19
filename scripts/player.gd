@@ -129,9 +129,15 @@ func _draw() -> void:
 		draw_rect(Rect2(px, -14, 8, 2), Color(0.55, 0.35, 0.15))
 
 func _can_deliver() -> bool:
+	# Check for delivery zone (portaria)
 	for area in delivery_area.get_overlapping_areas():
-		if area.is_in_group("delivery_point"):
+		if area.is_in_group("delivery_zone"):
 			return true
+	# Also check parent for delivery zones
+	for child in get_parent().get_children():
+		if child.is_in_group("delivery_zone"):
+			if child.can_deliver_to(self):
+				return true
 	return false
 
 func _perform_delivery() -> void:

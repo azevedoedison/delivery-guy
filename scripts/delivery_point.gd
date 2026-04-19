@@ -7,11 +7,16 @@ var bounce := 0.0
 func _ready() -> void:
 	add_to_group("delivery_point")
 	body_entered.connect(_on_body_entered)
+	# Ensure collision shape is big enough
+	var col = get_node_or_null("CollisionShape2D")
+	if col and col.shape:
+		col.shape.size = Vector2(40, 40)
 	delivery_type = randi() % 3
 	match delivery_type:
-		0: label.text = "Normal"
-		1: label.text = "Frágil!"
-		2: label.text = "Express!"
+		0: label.text = "📦 Normal"
+		1: label.text = "⚠️ Frágil!"
+		2: label.text = "🏃 Express!"
+	label.position = Vector2(-30, -40)
 
 func _process(delta: float) -> void:
 	bounce += delta * 3
