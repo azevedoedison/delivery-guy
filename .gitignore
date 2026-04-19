@@ -1,0 +1,25 @@
+# Godot
+.godot/
+*.translation
+export_presets.cfg
+
+# Env / secrets
+.env
+.env.*
+*.pem
+*.key
+*.p12
+*.p8
+credentials/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDEs
+.vscode/
+.idea/
+
+# Logs
+*.log
+logs/
